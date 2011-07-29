@@ -8,6 +8,7 @@ $string['interface'] = 'Интерфейс совместимости';
 $string['description'] = 'Описание по работе с flash-роликом';
 $string['flashwidth'] = 'Ширина ролика';
 $string['flashheight'] = 'Высота ролика';
+$string['flashsummary'] = 'Данный тип вопроса предоставляет очень широкие возможности, но вы должны иметь навыки программирования на action script, чтобы создать flash объект, который будет использоваться в этом вопросе.';
 $string['optionalfile'] = 'Дополнительный файл';
 $string['optionaldata'] = 'Дополнительные данные';
 $string['nooptionalfiles'] = 'Файлы не найдены (поиск осуществляется только в папке FlashQuestions).';
