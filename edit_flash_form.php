@@ -18,7 +18,41 @@ class question_edit_flash_form extends question_edit_form {
         return 'flash';
     }
 
-    function definition() {
+    function definition_inner(&$mform) {
+        $mform->addElement('filemanager', 'flashobject', get_string('flashobject', 'qtype_flash'), null,
+            array('subdirs'=>0,
+                  'maxfiles'=>1,
+                  'accepted_types'=>array('.swf'),
+                  'return_types'=>FILE_INTERNAL));
+        $mform->addRule('flashobject', null, 'required', null, 'client');
+        $mform->addElement('static', 'warning', '', get_string('flashwarning', 'qtype_flash'));
+
+        $mform->addElement('text', 'flashwidth', get_string('flashwidth', 'qtype_flash'),
+                array('size' => 4));
+        $mform->setType('flashwidth', PARAM_INT);
+        $mform->setDefault('flashwidth', 640);
+        $mform->addRule('flashwidth', null, 'required', null, 'client');
+
+        $mform->addElement('text', 'flashheight', get_string('flashheight', 'qtype_flash'),
+                array('size' => 4));
+        $mform->setType('flashheight', PARAM_INT);
+        $mform->setDefault('flashheight', 480);
+        $mform->addRule('flashheight', null, 'required', null, 'client');
+
+        $mform->addElement('filemanager', 'optionalfile', get_string('optionalfile', 'qtype_flash'), null,
+            array('subdirs'=>0,
+                  'maxfiles'=>1,
+                  'accepted_types'=>'*',
+                  'return_types'=>FILE_INTERNAL));
+        $mform->addHelpButton('optionalfile', 'optionalfile', 'qtype_flash');
+        $mform->setAdvanced('optionalfile');
+
+        $mform->addElement('textarea', 'optionaldata', get_string('optionaldata', 'qtype_flash'), 'wrap="virtual" rows="10" cols="45"');
+        $mform->addHelpButton('optionaldata', 'optionaldata', 'qtype_flash');
+        $mform->setAdvanced('optionaldata');
+    }
+    
+/*    function definition() {
         global $COURSE, $CFG;
 
         $qtype = $this->qtype();
@@ -77,19 +111,12 @@ class question_edit_flash_form extends question_edit_form {
 
         // -------------------------------------------------------
 
-        make_upload_directory($this->coursefilesid);    // Just in case
-        $coursefiles = get_directory_list("$CFG->dataroot/$this->coursefilesid", $CFG->moddata);
-	    foreach ($coursefiles as $filename) {
-	        if (mimeinfo('icon', $filename) === 'flash.gif') {
-	            $images["$filename"] = $filename;
-	        }
-	    }
-        if (empty($images)) {
-            $mform->addElement('static', 'image', get_string('flashmovie', 'qtype_flash'), get_string('noflashmovie', 'qtype_flash'));
-        } else {
-            $mform->addElement('select', 'image', get_string('flashmovie', 'qtype_flash'), array(''=>get_string('none')) + $images);
-        }
-        $mform->addRule('image', null, 'required', null, 'client');
+        $mform->addElement('filemanager', 'flashobject', get_string('flashobject', 'qtype_flash'), null,
+            array('subdirs'=>0,
+                  'maxfiles'=>1,
+                  'accepted_types'=>'*.swf',
+                  'return_types'=>FILE_INTERNAL));
+        $mform->addRule('flashobject', null, 'required', null, 'client');
         $mform->addElement('static', 'warning', '', get_string('flashwarning', 'qtype_flash'));
         $mform->setHelpButton('warning', array('flashinterface', get_string('interface', 'qtype_flash'), 'qtype_flash'));
 
@@ -105,16 +132,11 @@ class question_edit_flash_form extends question_edit_form {
         $mform->setDefault('flashheight', 480);
         $mform->addRule('flashheight', null, 'required', null, 'client');
 
-        make_upload_directory($this->coursefilesid.'/FlashQuestions');
-        $coursefiles = get_directory_list("$CFG->dataroot/$this->coursefilesid/FlashQuestions", $CFG->moddata);
-	    foreach ($coursefiles as $filename) {
-            $files["$filename"] = $filename;
-	    }
-        if (empty($files)) {
-            $mform->addElement('static', 'optionalfile', get_string('optionalfile', 'qtype_flash'), get_string('nooptionalfiles', 'qtype_flash'));
-        } else {
-            $mform->addElement('select', 'optionalfile', get_string('optionalfile', 'qtype_flash'), array(''=>get_string('none')) + $files);
-        }
+        $mform->addElement('filemanager', 'optionalfile', get_string('optionalfile', 'qtype_flash'), null,
+            array('subdirs'=>0,
+                  'maxfiles'=>1,
+                  'accepted_types'=>'*.swf',
+                  'return_types'=>FILE_INTERNAL));
         $mform->setHelpButton('optionalfile', array('optionalfile', get_string('optionalfile', 'qtype_flash'), 'qtype_flash'));
         $mform->setAdvanced('optionalfile');
 
@@ -217,7 +239,7 @@ class question_edit_flash_form extends question_edit_form {
         } elseif ((!empty($this->question->id)) && (!($this->question->formoptions->canedit || $this->question->formoptions->cansaveasnew))){
             $mform->hardFreezeAllVisibleExcept(array('categorymoveto', 'buttonar', 'currentgrp'));
         }
-    }
+    }*/
 
 }
 ?>
