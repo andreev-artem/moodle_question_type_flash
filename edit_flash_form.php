@@ -51,6 +51,17 @@ class question_edit_flash_form extends question_edit_form {
         $mform->addHelpButton('optionaldata', 'optionaldata', 'qtype_flash');
         $mform->setAdvanced('optionaldata');
     }
+
+    function data_preprocessing($question) {
+        $draftid = file_get_submitted_draft_itemid('flashobject');
+        file_prepare_draft_area($draftid,
+                    $this->context->id,
+                    'qtype_flash',
+                    'flashobject',
+                    !empty($question->id)?(int)$question->id:null,
+                    array('subdirs' => 0, 'maxfiles' => 1));
+        $question->flashobject = $draftid;
+    }
     
 /*    function definition() {
         global $COURSE, $CFG;

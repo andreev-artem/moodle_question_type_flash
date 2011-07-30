@@ -21,24 +21,31 @@ class question_flash_qtype extends default_questiontype {
     }
 
     function save_question_options($question) {
-        if ($options = get_record('question_flash', 'question', $question->id)) {
+        global $DB;
+
+        $context = $question->context;
+        if ($options = $DB->get_record('question_flash', array('question', $question->id))) {
             //$options->question = $question->id;
+            file_save_draft_area_files($question->id, $context->id,
+                    'qtype_flash', 'flashobject', $question->id, array('subdirs' => 0, 'maxfiles' => 1));
             $options->width = $question->flashwidth;
             $options->height = $question->flashheight;
             @$options->optionalfile = $question->optionalfile;
             $options->optionaldata = $question->optionaldata;
-            if (!update_record('question_flash', $options)) {
+            if (!$DB->update_record('question_flash', $options)) {
                 $result->error = "Could not update quiz flash options! (id=$options->id)";
                 return $result;
             }
         } else {
             unset($options);
+            file_save_draft_area_files($question->id, $context->id,
+                    'qtype_flash', 'flashobject', $question->id, array('subdirs' => 0, 'maxfiles' => 1));
             $options->question = $question->id;
             $options->width = $question->flashwidth;
             $options->height = $question->flashheight;
             @$options->optionalfile = $question->optionalfile;
             $options->optionaldata = $question->optionaldata;
-            if (!insert_record('question_flash', $options)) {
+            if (!$DB->insert_record('question_flash', $options)) {
                 $result->error = 'Could not insert quiz flash options!';
                 return $result;
             }
@@ -50,9 +57,11 @@ class question_flash_qtype extends default_questiontype {
     * Loads the question type specific options for the question.
     */
     function get_question_options(&$question) {
+        global $DB;
+
         // Get additional information from database
         // and attach it to the question object
-        if (!$options = get_record('question_flash', 'question', $question->id)) {
+        if (!$options = $DB->get_record('question_flash', array('question', $question->id))) {
             return false;
         }
         $question->flashwidth = $options->width;
@@ -60,7 +69,7 @@ class question_flash_qtype extends default_questiontype {
         @$question->optionalfile = $options->optionalfile;
         @$question->optionaldata = $options->optionaldata;
         // Load the answers
-        $question->options->answers = get_records('question_answers', 'question', $question->id);
+        $question->options->answers = $DB->get_records('question_answers', array('question', $question->id));
 
         return true;
     }
@@ -77,10 +86,12 @@ class question_flash_qtype extends default_questiontype {
 //    }
 
     function delete_states($stateslist) {
+        global $DB;
+
         /// The default question type does not have any tables of its own
         // therefore there is nothing to delete
 
-    	delete_records_select('question_flash_states', "stateid IN ($stateslist)");
+    	$DB->delete_records_select('question_flash_states', "stateid IN ($stateslist)");
         return true;
     }
 
@@ -97,10 +108,10 @@ class question_flash_qtype extends default_questiontype {
 
     // for moodle v1.9 and higher (dlnsk)
     function get_html_head_contributions(&$question, &$state) {
-        global $CFG;
+        global $PAGE;
         // Load flash interface libraries
-        require_js($CFG->wwwroot.'/question/type/flash/flash_tag.js');
-        require_js($CFG->wwwroot.'/question/type/flash/interface.js');
+        $PAGE->requires->js('/question/type/flash/flash_tag.js');
+        $PAGE->requires->js('/question/type/flash/interface.js');
 
         $contributions = parent::get_html_head_contributions($question, $state);
 
@@ -202,6 +213,7 @@ class question_flash_qtype extends default_questiontype {
     }
     
     function save_session_and_responses(&$question, &$state) {
+        global $DB;
         
         if (!set_field('question_states', 'answer', $state->responses[''], 'id', $state->id)) {
             return false;
@@ -216,12 +228,12 @@ class question_flash_qtype extends default_questiontype {
         $options->grade = isset($state->responses['grade']) ? $state->responses['grade'] : 0;
         $state->options = clone($options);
         // Only in this function we already know $state->id
-        if ($options->id = get_field('question_flash_states', 'id', 'stateid', $state->id)) {
-            if (!update_record('question_flash_states', $options)) {
+        if ($options->id = $DB->get_field('question_flash_states', 'id', array('stateid', $state->id))) {
+            if (!$DB->update_record('question_flash_states', $options)) {
                 return false;
             }
         } else {
-            if (!$options->id = insert_record('question_flash_states', $options)) {
+            if (!$options->id = $DB->insert_record('question_flash_states', $options)) {
                 return false;
             }
         }
@@ -231,10 +243,10 @@ class question_flash_qtype extends default_questiontype {
                 $answer->question = $question->id;
                 $answer->answer = $state->responses[''];
                 $answer->fraction = $options->grade;
-                insert_record('question_answers', $answer);
+                $DB->insert_record('question_answers', $answer);
             } else {
                 $answer->fraction = $options->grade;
-                update_record('question_answers', $answer);
+                $DB->update_record('question_answers', $answer);
             }
         }
 
@@ -250,26 +262,23 @@ class question_flash_qtype extends default_questiontype {
      *
      * This is used in question/backuplib.php
      */
-//    function backup($bf,$preferences,$question,$level=6) {
-//
-//        $status = true;
-//
-//        $truefalses = get_records("question_truefalse","question",$question,"id");
-//        //If there are truefalses
-//        if ($truefalses) {
-//            //Iterate over each truefalse
-//            foreach ($truefalses as $truefalse) {
-//                $status = fwrite ($bf,start_tag("TRUEFALSE",$level,true));
-//                //Print truefalse contents
-//                fwrite ($bf,full_tag("TRUEANSWER",$level+1,false,$truefalse->trueanswer));
-//                fwrite ($bf,full_tag("FALSEANSWER",$level+1,false,$truefalse->falseanswer));
-//                $status = fwrite ($bf,end_tag("TRUEFALSE",$level,true));
-//            }
-//            //Now print question_answers
-//            $status = question_backup_answers($bf,$preferences,$question);
-//        }
-//        return $status;
-//    }
+    function backup($bf,$preferences,$question,$level=6) {
+
+        $status = true;
+
+        // Output the flash question settings.
+        $flashoptions = get_record('question_flash', 'question', $question);
+        if ($flashoptions) {
+            $status = fwrite ($bf,start_tag('FLASHOPTIONS',6,true));
+            fwrite ($bf,full_tag('WIDTH',7,false,$flashoptions->width));
+            fwrite ($bf,full_tag('HEIGHT',7,false,$flashoptions->height));
+            fwrite ($bf,full_tag('OPTIONALFILE',7,false,$flashoptions->optionalfile));
+            fwrite ($bf,full_tag('OPTIONALDATA',7,false,$flashoptions->optionaldata));
+            $status = fwrite ($bf,end_tag('FLASHOPTIONS',6,true));
+        }
+
+        return $status;
+    }
 
 /// RESTORE FUNCTIONS /////////////////
 
@@ -278,65 +287,29 @@ class question_flash_qtype extends default_questiontype {
      *
      * This is used in question/restorelib.php
      */
-//    function restore($old_question_id,$new_question_id,$info,$restore) {
-//
-//        $status = true;
-//
-//        //Get the truefalse array
-//        $truefalses = $info['#']['TRUEFALSE'];
-//
-//        //Iterate over truefalse
-//        for($i = 0; $i < sizeof($truefalses); $i++) {
-//            $tru_info = $truefalses[$i];
-//
-//            //Now, build the question_truefalse record structure
-//            $truefalse->question = $new_question_id;
-//            $truefalse->trueanswer = backup_todb($tru_info['#']['TRUEANSWER']['0']['#']);
-//            $truefalse->falseanswer = backup_todb($tru_info['#']['FALSEANSWER']['0']['#']);
-//
-//            ////We have to recode the trueanswer field
-//            $answer = backup_getid($restore->backup_unique_code,"question_answers",$truefalse->trueanswer);
-//            if ($answer) {
-//                $truefalse->trueanswer = $answer->new_id;
-//            }
-//
-//            ////We have to recode the falseanswer field
-//            $answer = backup_getid($restore->backup_unique_code,"question_answers",$truefalse->falseanswer);
-//            if ($answer) {
-//                $truefalse->falseanswer = $answer->new_id;
-//            }
-//
-//            //The structure is equal to the db, so insert the question_truefalse
-//            $newid = insert_record ("question_truefalse",$truefalse);
-//
-//            //Do some output
-//            if (($i+1) % 50 == 0) {
-//                if (!defined('RESTORE_SILENTLY')) {
-//                    echo ".";
-//                    if (($i+1) % 1000 == 0) {
-//                        echo "<br />";
-//                    }
-//                }
-//                backup_flush(300);
-//            }
-//
-//            if (!$newid) {
-//                $status = false;
-//            }
-//        }
-//
-//        return $status;
-//    }
-//
-//    function restore_recode_answer($state, $restore) {
-//        $answer = backup_getid($restore->backup_unique_code,"question_answers",$state->answer);
-//        if ($answer) {
-//            return $answer->new_id;
-//        } else {
-//            echo 'Could not recode truefalse answer id '.$state->answer.' for state '.$oldid.'<br />';
-//        }
-//        return '';
-//    }
+    function restore($old_question_id,$new_question_id,$info,$restore) {
+
+        $status = true;
+
+        //We have created every match_sub, now create the match
+        $flash = new stdClass;
+        $flash->question = $new_question_id;
+
+        // Get options
+        $flash->width = backup_todb($info['#']['FLASHOPTIONS']['0']['#']['WIDTH']['0']['#']);
+        $flash->height = backup_todb($info['#']['FLASHOPTIONS']['0']['#']['HEIGHT']['0']['#']);
+        $flash->optionalfile = backup_todb($info['#']['FLASHOPTIONS']['0']['#']['OPTIONALFILE']['0']['#']);
+        $flash->optionaldata = backup_todb($info['#']['FLASHOPTIONS']['0']['#']['OPTIONALDATA']['0']['#']);
+
+        //The structure is equal to the db, so insert the question_match_sub
+        $newid = insert_record ('question_flash', $flash);
+
+        if (!$newid) {
+            $status = false;
+        }
+
+        return $status;
+    }
 
 }
 //// END OF CLASS ////
@@ -344,9 +317,6 @@ class question_flash_qtype extends default_questiontype {
 //////////////////////////////////////////////////////////////////////////
 //// INITIATION - Without this line the question type is not in use... ///
 //////////////////////////////////////////////////////////////////////////
-//$QTYPES['flash']= new question_flash_qtype();
-// The following adds the questiontype to the menu of types shown to teachers
-//$QTYPE_MENU['flash'] = get_string("flash", "quiz");
 
 question_register_questiontype(new question_flash_qtype());
 ?>
