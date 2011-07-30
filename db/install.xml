@@ -7,7 +7,8 @@
     <TABLE NAME="question_flash" COMMENT="Additional data for flash question type" NEXT="question_flash_states">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true" ENUM="false" NEXT="question"/>
-        <FIELD NAME="question" TYPE="int" LENGTH="10" NOTNULL="false" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="id" NEXT="width"/>
+        <FIELD NAME="question" TYPE="int" LENGTH="10" NOTNULL="false" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="id" NEXT="flashobject"/>
+        <FIELD NAME="flashobject" TYPE="char" LENGTH="100" NOTNULL="true" SEQUENCE="false" PREVIOUS="question" NEXT="width"/>
         <FIELD NAME="width" TYPE="int" LENGTH="10" NOTNULL="false" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="question" NEXT="height"/>
         <FIELD NAME="height" TYPE="int" LENGTH="10" NOTNULL="false" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="width" NEXT="optionalfile"/>
         <FIELD NAME="optionalfile" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" ENUM="false" PREVIOUS="height" NEXT="optionaldata"/>

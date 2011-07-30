@@ -19,20 +19,20 @@
 
 function xmldb_qtype_flash_upgrade($oldversion=0) {
 
-    global $CFG, $THEME, $db;
+    global $CFG, $DB;
 
-    $result = true;
+    $dbman = $DB->get_manager();
 
-/// And upgrade begins here. For each one, you'll need one 
-/// block of code similar to the next one. Please, delete 
-/// this comment lines once this file start handling proper
-/// upgrade code.
+/*    if ($oldversion < 2010121800) {
+        $table = new xmldb_table('question_flash');
+        $field = new xmldb_field('flashobject', XMLDB_TYPE_CHAR, '100', null, null, null, null, 'question');
 
-/// if ($result && $oldversion < YYYYMMDD00) { //New version in version.php
-///     $result = result of "/lib/ddllib.php" function calls
-/// }
-
-    return $result;
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+    }*/
+    
+    return true;
 }
 
 ?>
