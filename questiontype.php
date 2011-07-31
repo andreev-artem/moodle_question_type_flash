@@ -23,11 +23,11 @@ class question_flash_qtype extends default_questiontype {
     function save_question_options($question) {
         global $DB;
 
-        $context = $question->context;
-        if ($options = $DB->get_record('question_flash', array('question', $question->id))) {
+        if ($options = $DB->get_record('question_flash', array('question' => $question->id))) {
             //$options->question = $question->id;
-            file_save_draft_area_files($question->id, $context->id,
+            file_save_draft_area_files($question->flashobject, $question->context->id,
                     'qtype_flash', 'flashobject', $question->id, array('subdirs' => 0, 'maxfiles' => 1));
+            $options->flashobject = $question->flashobject;
             $options->width = $question->flashwidth;
             $options->height = $question->flashheight;
             @$options->optionalfile = $question->optionalfile;
@@ -38,9 +38,10 @@ class question_flash_qtype extends default_questiontype {
             }
         } else {
             unset($options);
-            file_save_draft_area_files($question->id, $context->id,
+            file_save_draft_area_files($question->flashobject, $question->context->id,
                     'qtype_flash', 'flashobject', $question->id, array('subdirs' => 0, 'maxfiles' => 1));
             $options->question = $question->id;
+            $options->flashobject = $question->flashobject;
             $options->width = $question->flashwidth;
             $options->height = $question->flashheight;
             @$options->optionalfile = $question->optionalfile;
@@ -61,7 +62,7 @@ class question_flash_qtype extends default_questiontype {
 
         // Get additional information from database
         // and attach it to the question object
-        if (!$options = $DB->get_record('question_flash', array('question', $question->id))) {
+        if (!$options = $DB->get_record('question_flash', array('question' => $question->id))) {
             return false;
         }
         $question->flashwidth = $options->width;
@@ -69,7 +70,7 @@ class question_flash_qtype extends default_questiontype {
         @$question->optionalfile = $options->optionalfile;
         @$question->optionaldata = $options->optionaldata;
         // Load the answers
-        $question->options->answers = $DB->get_records('question_answers', array('question', $question->id));
+        $question->options->answers = $DB->get_records('question_answers', array('question' => $question->id));
 
         return true;
     }
@@ -110,8 +111,8 @@ class question_flash_qtype extends default_questiontype {
     function get_html_head_contributions(&$question, &$state) {
         global $PAGE;
         // Load flash interface libraries
-        $PAGE->requires->js('/question/type/flash/flash_tag.js');
-        $PAGE->requires->js('/question/type/flash/interface.js');
+        $PAGE->requires->js('/question/type/flash/flash_tag.js', true);
+        $PAGE->requires->js('/question/type/flash/interface.js', true);
 
         $contributions = parent::get_html_head_contributions($question, $state);
 
@@ -124,6 +125,8 @@ class question_flash_qtype extends default_questiontype {
     function print_question_formulation_and_controls(&$question, &$state,
             $cmoptions, $options) {
         global $CFG;
+
+        $context = $this->get_context_by_category_id($question->category);
 
         $formatoptions = new stdClass;
         $formatoptions->noclean = true;
@@ -141,17 +144,49 @@ class question_flash_qtype extends default_questiontype {
 
         $width  = $question->flashwidth;
         $height = $question->flashheight;
-        $optionalfile = !empty($question->optionalfile) ? '&optFile='.get_file_url("{$cmoptions->course}/FlashQuestions/{$question->optionalfile}") : '';
+        
+        $qcontextid = $context->id;
+        $qid = $question->id;
+        $attemptid = $state->attempt;
+        $optionalfile = !empty($question->optionalfile) ? '&optFile='.$this->get_file_url('optionalfile', $qcontextid, $qid, $attemptid) : '';
         $optionaldata = !empty($question->optionaldata) ? addslashes_js('&optData='.$question->optionaldata) : '';
 		
         // Print question formulation
         $questiontext = format_text($question->questiontext,
                          $question->questiontextformat,
                          $formatoptions, $cmoptions->course);
-        $image = get_question_image($question, $cmoptions->course);
+        $flashobject = $this->get_file_url('flashobject', $qcontextid, $qid, $attemptid);
 
         include("$CFG->dirroot/question/type/flash/display.html");
     }
+    
+    private function get_file_url($filearea, $qcontextid, $qid, $attemptid) {
+        global $CFG;
+        
+        $fs = get_file_storage();
+        if ($files = $fs->get_area_files($qcontextid, 'qtype_flash', $filearea, $qid, "timemodified", false)) {
+            $file = array_shift($files);
+            $filename = $file->get_filename();
+            // first $qid - for quiz file handling functions
+            // second - for identifying $filename in $filearea
+            $path = file_encode_url($CFG->wwwroot.'/pluginfile.php', "/$qcontextid/qtype_flash/$filearea/$attemptid/$qid/$qid/$filename");
+            return $path;
+        }
+        
+        return '';
+    }
+    
+    function check_file_access($question, $state, $options, $contextid, $component,
+            $filearea, $args) {
+
+        if ($filearea == 'flashobject' or $filearea == 'optionalfile') {
+            return true;
+        } else {
+            return parent::check_file_access($question, $state, $options, $contextid, $component,
+                    $filearea, $args);
+        }
+    }
+    
 
     function grade_responses(&$question, &$state, $cmoptions) {
         // Only allow one attempt at the question
@@ -223,12 +258,12 @@ class question_flash_qtype extends default_questiontype {
         	$state->responses['flashdata'] = stripslashes($state->responses['flashdata']);
         }
         
-		$options->stateid = $state->id;
+        $options->stateid = $state->id;
         $options->flashdata = isset($state->responses['flashdata']) ? $state->responses['flashdata'] : '';
         $options->grade = isset($state->responses['grade']) ? $state->responses['grade'] : 0;
         $state->options = clone($options);
         // Only in this function we already know $state->id
-        if ($options->id = $DB->get_field('question_flash_states', 'id', array('stateid', $state->id))) {
+        if ($options->id = $DB->get_field('question_flash_states', 'id', array('stateid' => $state->id))) {
             if (!$DB->update_record('question_flash_states', $options)) {
                 return false;
             }
@@ -239,7 +274,7 @@ class question_flash_qtype extends default_questiontype {
         }
 
         if (!empty($state->responses[''])) {
-            if (!$answer = get_record('question_answers', 'question', $question->id, 'answer', $state->responses[''])) {
+            if (!$answer = get_record('question_answers', array('question' => $question->id, 'answer' => $state->responses['']))) {
                 $answer->question = $question->id;
                 $answer->answer = $state->responses[''];
                 $answer->fraction = $options->grade;

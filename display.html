@@ -5,13 +5,13 @@
 <input id="idresp<?php echo $question->id; ?>_flashdata" type="hidden" name="resp<?php echo $question->id; ?>_flashdata" value="" />
 <input id="idresp<?php echo $question->id; ?>_grade" type="hidden" name="resp<?php echo $question->id; ?>_grade" value="" />
 
-<?php if ($image) { ?>
+<?php if ($flashobject) { ?>
     <p class="mediaplugin swf">
       <script type="text/javascript">
 	function <?php echo $qName; ?>_DoFSCommand(cmd, data) {
 		CpToJSComm(<?php echo $question->id; ?>, cmd+"|"+data, new Array("<?php print_string('incorrect', 'quiz') ?>", "<?php print_string('partiallycorrect', 'quiz') ?>", "<?php print_string('correct', 'quiz') ?>")); 
 	}
-          var sample = new FlashTag("<?php echo $image; ?>", <?php echo $width; ?>, <?php echo $height; ?>);
+          var sample = new FlashTag("<?php echo $flashobject; ?>", <?php echo $width; ?>, <?php echo $height; ?>);
           sample.setId("<?php echo $qName; ?>");
           sample.setFlashvars('qID=<?php echo $question->id. $description. $grade. $readonly. $adaptive. $fillcorrect. $flashdata. $optionalfile. $optionaldata; ?>');
           sample.write(document);
