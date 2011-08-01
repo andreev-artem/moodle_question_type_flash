@@ -136,11 +136,11 @@ class question_flash_qtype extends default_questiontype {
         $readonly = $options->readonly ? '&qRO=1' : '';
         $adaptive = ($cmoptions->optionflags & QUESTION_ADAPTIVE) ?  '&qAM=1' : '';
         $fillcorrect = $options->correct_responses ? '&qFC=1' : '';
-        if ($options->responses) {
-        	$flashdata = !empty($state->options->flashdata) ? addslashes_js('&flData='.$state->options->flashdata) : '';
+        if ($state->responses) {
+            $flashdata = !empty($state->responses['flashdata']) ? addslashes_js('&flData='.$state->responses['flashdata']) : '';
         }
-		$description = !empty($state->options->answer) ? addslashes_js('&qDesc='.$state->options->answer) : '';
-		$grade = '&qGr='.$state->raw_grade;
+        $description = !empty($state->options->answer) ? addslashes_js('&qDesc='.$state->options->answer) : '';
+        $grade = '&qGr='.$state->raw_grade;
 
         $width  = $question->flashwidth;
         $height = $question->flashheight;
@@ -191,12 +191,12 @@ class question_flash_qtype extends default_questiontype {
     function grade_responses(&$question, &$state, $cmoptions) {
         // Only allow one attempt at the question
         //$state->penalty = 0;
-		if (isset($state->responses['grade'])) {
+        if (isset($state->responses['grade'])) {
             $gr = (float)$state->responses['grade'];
             $gr = $gr < 0 ? 0 : $gr;
             $gr = $gr > 1 ? 1 : $gr;
-			$state->raw_grade = $gr * $question->maxgrade;
-		} 
+            $state->raw_grade = $gr * $question->maxgrade;
+        } 
         // mark the state as graded
         $state->event = ($state->event == QUESTION_EVENTCLOSE) ? QUESTION_EVENTCLOSEANDGRADE : QUESTION_EVENTGRADE;
         return true;
@@ -236,7 +236,9 @@ class question_flash_qtype extends default_questiontype {
     }
     
     function restore_session_and_responses(&$question, &$state) {
-        if (!$options = get_record('question_flash_states', 'stateid', $state->id)) {
+        global $DB;
+        
+        if (!$options = $DB->get_record('question_flash_states', array('stateid' => $state->id))) {
             return false;
         }
         $state->options->flashdata = $options->flashdata;
@@ -250,7 +252,7 @@ class question_flash_qtype extends default_questiontype {
     function save_session_and_responses(&$question, &$state) {
         global $DB;
         
-        if (!set_field('question_states', 'answer', $state->responses[''], 'id', $state->id)) {
+        if (!$DB->set_field('question_states', 'answer', $state->responses[''], array('id' => $state->id))) {
             return false;
         }
         $state->responses[''] = stripslashes($state->responses['']);
@@ -274,15 +276,20 @@ class question_flash_qtype extends default_questiontype {
         }
 
         if (!empty($state->responses[''])) {
-            if (!$answer = get_record('question_answers', array('question' => $question->id, 'answer' => $state->responses['']))) {
+            // answers are necessary for statisctics (Item Analysis)
+            // do not add duplicate answers
+            $where = 'question = :qid AND '.$DB->sql_compare_text('answer').' = :answer';
+            $answer = $DB->get_record_select('question_answers', $where, array('qid' => $question->id, 'answer' => $state->responses['']));
+            if (!$answer) {
                 $answer->question = $question->id;
                 $answer->answer = $state->responses[''];
                 $answer->fraction = $options->grade;
+                $answer->feedback = '';
                 $DB->insert_record('question_answers', $answer);
-            } else {
+            }/* else {
                 $answer->fraction = $options->grade;
                 $DB->update_record('question_answers', $answer);
-            }
+            }*/
         }
 
         return true;
@@ -297,7 +304,7 @@ class question_flash_qtype extends default_questiontype {
      *
      * This is used in question/backuplib.php
      */
-    function backup($bf,$preferences,$question,$level=6) {
+/*    function backup($bf,$preferences,$question,$level=6) {
 
         $status = true;
 
@@ -322,7 +329,7 @@ class question_flash_qtype extends default_questiontype {
      *
      * This is used in question/restorelib.php
      */
-    function restore($old_question_id,$new_question_id,$info,$restore) {
+/*    function restore($old_question_id,$new_question_id,$info,$restore) {
 
         $status = true;
 
@@ -344,7 +351,7 @@ class question_flash_qtype extends default_questiontype {
         }
 
         return $status;
-    }
+    }*/
 
 }
 //// END OF CLASS ////
