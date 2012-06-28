@@ -1,4 +1,7 @@
 <?php
+
+defined('MOODLE_INTERNAL') || die();
+
 /**
  * Defines the editing form for the flash question type.
  *
@@ -7,12 +10,11 @@
  * @license http://www.gnu.org/copyleft/gpl.html GNU Public License
  * @package questions
  */
-require_once($CFG->dirroot.'/question/type/edit_question_form.php');
 
 /**
  * flash editing form definition.
  */
-class question_edit_flash_form extends question_edit_form {
+class qtype_flash_edit_form extends question_edit_form {
 	
     function qtype() {
         return 'flash';
@@ -38,37 +40,33 @@ class question_edit_flash_form extends question_edit_form {
         $mform->setDefault('flashheight', 480);
         $mform->addRule('flashheight', null, 'required', null, 'client');
 
-        $mform->addElement('filemanager', 'optionalfile', get_string('optionalfile', 'qtype_flash'), null,
-            array('subdirs'=>0,
-                  'maxfiles'=>1,
-                  'accepted_types'=>'*'));
-        $mform->addHelpButton('optionalfile', 'optionalfile', 'qtype_flash');
-        $mform->setAdvanced('optionalfile');
-
         $mform->addElement('textarea', 'optionaldata', get_string('optionaldata', 'qtype_flash'), 'wrap="virtual" rows="10" cols="45"');
         $mform->addHelpButton('optionaldata', 'optionaldata', 'qtype_flash');
         $mform->setAdvanced('optionaldata');
     }
 
     function data_preprocessing($question) {
-        $draftid = file_get_submitted_draft_itemid('flashobject');
-        file_prepare_draft_area($draftid,
-                    $this->context->id,
-                    'qtype_flash',
-                    'flashobject',
-                    !empty($question->id)?(int)$question->id:null,
-                    array('subdirs' => 0, 'maxfiles' => 1));
-        $question->flashobject = $draftid;
+        $question = parent::data_preprocessing($question);
 
-        $draftid = file_get_submitted_draft_itemid('optionalfile');
-        file_prepare_draft_area($draftid,
-                    $this->context->id,
-                    'qtype_flash',
-                    'optionalfile',
-                    !empty($question->id)?(int)$question->id:null,
-                    array('subdirs' => 0, 'maxfiles' => 1));
-        $question->optionalfile = $draftid;
-        
+        if (empty($question->options)) {
+            return $question;
+        }
+
+        $question->flashobject = $question->options->flashobject;
+        $question->flashwidth = $question->options->width;
+        $question->flashheight = $question->options->height;
+
+        $draftid = file_get_submitted_draft_itemid('flashobject');
+        if ($draftid) {
+            file_prepare_draft_area($draftid,
+                        $this->context->id,
+                        'qtype_flash',
+                        'flashobject',
+                        !empty($question->id)?(int)$question->id:null,
+                        array('subdirs' => 0, 'maxfiles' => 1));
+            $question->flashobject = $draftid;
+        }
+
         return $question;
     }
 }

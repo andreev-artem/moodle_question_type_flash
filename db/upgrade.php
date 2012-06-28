@@ -1,4 +1,4 @@
-<?php  //$Id: upgrade.php,v 1.1 2009/06/23 13:39:49 arborrow Exp $
+<?php
 
 // This file keeps track of upgrades to 
 // the match qtype plugin

@@ -1,6 +1,6 @@
-<?PHP // $Id: version.php,v 1.1 2009/06/23 13:39:49 arborrow Exp $
+<?PHP
 
-$plugin->version  = 2011072900;
-$plugin->requires = 2010112400;
+$plugin->version  = 2012012100;
+$plugin->requires = 2011060313;
 
 ?>

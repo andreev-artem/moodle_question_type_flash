@@ -26,9 +26,6 @@ function flashToJSComm(item) {
 	
 	obj = getEl("idresp"+item.id+"_flashdata");
 	obj.value = item.flashdata;
-	
-	obj = getEl("idresp"+item.id+"_");
-	obj.value = item.description;
 }
 
 function CpToJSComm(qid, cmd, lng) {
