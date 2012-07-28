@@ -14,4 +14,7 @@ $string['optionalfile'] = 'Дополнительный файл';
 $string['optionalfile_help'] = 'Дополнительный файл, который будет передан в flash объект';
 $string['optionaldata'] = 'Дополнительные данные';
 $string['optionaldata_help'] = 'Дополнительные данные, которые будут переданы в flash объект';
+$string['pluginname'] = 'Flash-вопрос';
+
+
 ?>
